@@ -32,6 +32,7 @@ final class Tile extends View {
     private final TextPaint inner = new TextPaint(Paint.ANTI_ALIAS_FLAG);
     private final TextPaint under = new TextPaint(Paint.ANTI_ALIAS_FLAG);
     private boolean moving;
+    private final AfterglowTile afterglow;
 
     Tile(Context c, Item item, String kind, CharSequence title, int cardW, int cardH,
             String labels, int accent) {
@@ -42,11 +43,13 @@ final class Tile extends View {
         this.cardW = cardW;
         this.cardH = cardH;
         boolean app = Catalog.APPS.equals(kind);
-        labelH = app ? Ui.dp(c, 26) : 0;
+        afterglow = app && "afterglow".equals(Config.get(c).get(Config.TILE_STYLE))
+                ? new AfterglowTile(c, item.id, title, accent) : null;
+        labelH = app && afterglow == null ? Ui.dp(c, 26) : 0;
         labelAlways = "always".equals(labels);
         labelOnFocus = "focus".equals(labels);
         radius = Ui.dp(c, 10);
-        stroke = Ui.dp(c, 2.5f);
+        stroke = Ui.dp(c, afterglow == null ? 2.5f : 1f);
 
         fill.setColor(app ? Ui.SURFACE : 0xFF17181B);
         ring.setStyle(Paint.Style.STROKE);
@@ -83,6 +86,7 @@ final class Tile extends View {
         card.set(0, 0, cardW, cardH);
         clip.reset();
         clip.addRoundRect(card, radius, radius, Path.Direction.CW);
+        if (afterglow != null) afterglow.resize(cardW, cardH);
         setPivotX(cardW / 2f);
         setPivotY(cardH / 2f);
     }
@@ -90,8 +94,13 @@ final class Tile extends View {
     @Override
     protected void onFocusChanged(boolean focused, int direction, Rect previous) {
         super.onFocusChanged(focused, direction, previous);
-        float s = focused ? FOCUS_SCALE : 1f;
-        animate().scaleX(s).scaleY(s).setDuration(110).start();
+        animate().cancel();
+        if (focused) {
+            animate().scaleX(FOCUS_SCALE).scaleY(FOCUS_SCALE).setDuration(110).start();
+        } else {
+            setScaleX(1f);
+            setScaleY(1f);
+        }
         invalidate();
     }
 
@@ -101,7 +110,9 @@ final class Tile extends View {
         canvas.save();
         canvas.clipPath(clip);
         canvas.drawRect(card, fill);
-        if (banner != null) {
+        if (afterglow != null) {
+            afterglow.draw(canvas, icon, cardW, cardH);
+        } else if (banner != null) {
             banner.setBounds(0, 0, cardW, cardH);
             banner.draw(canvas);
         } else if (icon != null) {
@@ -115,6 +126,8 @@ final class Tile extends View {
         }
         if (moving) canvas.drawColor(0x99000000);
         canvas.restore();
+
+        if (afterglow != null) afterglow.edge(canvas, cardW, cardH, radius);
 
         if (item.state == TvInputManager.INPUT_STATE_CONNECTED) {
             float r = Ui.dp(getContext(), 3.5f);

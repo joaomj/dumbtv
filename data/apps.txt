@@ -4,6 +4,7 @@
 # Format:  <display name>    <package>
 Netflix                     com.netflix.ninja
 Prime Video                 com.amazon.avod
+Prime Video (Fire TV)       com.amazon.firebat
 YouTube                     com.amazon.firetv.youtube
 YouTube Kids                com.amazon.firetv.youtube.kids
 VLC                         org.videolan.vlc
@@ -23,3 +24,5 @@ Aaj Tak                     com.aajtak.firetv
 Twitch                      tv.twitch.android.viewer
 FastScreen                  com.creative.fastscreen.tv
 Appstore                    com.amazon.venezia
+Amazon Kids                 com.amazon.tahoe
+Amazon Luna                 com.amazon.spiderpork

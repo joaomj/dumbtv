@@ -16,6 +16,7 @@ import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -48,6 +49,10 @@ public final class Options extends Activity {
         list.addView(title);
 
         for (Config.Choice c : Config.CHOICES) list.addView(choice(c));
+        list.addView(action("Next wallpaper", () -> {
+            cfg.nextWallpaper();
+            refresh();
+        }));
         list.addView(gap());
         list.addView(action("Apps on home screen", () -> pick(Catalog.APPS)));
         list.addView(action("Inputs on home screen", () -> pick(Catalog.INPUTS)));
@@ -61,7 +66,12 @@ public final class Options extends Activity {
         about.setLineSpacing(0, 1.4f);
         about.setPadding(dp(16), dp(28), 0, 0);
         about.setText("Settings file: " + cfg.dir + "/" + Config.FILE
-                + "\nWallpaper: put wallpaper.jpg in that folder, then pick Background › Image file"
+                + "\nOne wallpaper: name it exactly wallpaper.jpg (or .png) and put it in that folder"
+                + "\nSeveral wallpapers: put them in " + Config.WALLPAPERS + "/ with any names, and pick a rotation"
+                + "\nThen pick Background › Image file or Adaptive wallpaper tint. No permission is needed"
+                + "\nOn Fire OS 8 adb cannot reach that folder; use /sdcard/Android/media/"
+                + getPackageName() + "/ instead"
+                + "\nAdaptive wallpaper tint shows graphite until you add a wallpaper"
                 + "\nNo internet permission. No tracking, no ads, no accounts.");
         list.addView(about);
 
@@ -107,7 +117,10 @@ public final class Options extends Activity {
                 value.setText(focused ? "‹  " + text + "  ›" : text);
             }
             value.setTextColor(focused ? Ui.TEXT : Ui.MUTED);
-            boolean off = c == Config.DIM && !"image".equals(cfg.get(Config.BACKGROUND));
+            boolean off = (c == Config.DIM || c == Config.ROTATE)
+                    && !"image".equals(cfg.get(Config.BACKGROUND))
+                    && !"adaptive-tint".equals(cfg.get(Config.BACKGROUND))
+                    || c == Config.SWITCH && "off".equals(cfg.get(Config.INPUTS));
             row.setAlpha(off ? 0.4f : 1f);
         };
         row.setOnFocusChangeListener((v, has) -> show.run());
@@ -121,6 +134,11 @@ public final class Options extends Activity {
         int n = c.values.length;
         cfg.set(c.key, c.values[((i + by) % n + n) % n]);
         refresh();
+        if (c == Config.LOCK && "on".equals(cfg.get(c))) {
+            Toast.makeText(this, "Options and Settings are hidden on the home screen now. "
+                    + "Hold \u2630 Menu for " + Home.UNLOCK_MS / 1000 + " seconds to come back here.",
+                    Toast.LENGTH_LONG).show();
+        }
         return true;
     }
 
